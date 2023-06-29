@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { Application } from 'pixi.js';
+  import { Application, Sprite } from 'pixi.js';
 
   const app = new Application({
     view: document.getElementById('game-canvas') as HTMLCanvasElement,
@@ -19,4 +19,45 @@ import Layout from '../layouts/Layout.astro';
     width: 420,
     height: 640,
   });
+
+  let speed = 6;
+
+  const player = Sprite.from('sliding-penguins/penguin.png');
+  player.anchor.set(0.5);
+
+  player.x = app.screen.width / 2;
+  player.y = 80;
+  player.scale.set(0.12);
+
+  app.stage.addChild(player);
+
+  for (let index = 0; index < app.screen.height / 40 + 3; index++) {
+    const leftTree = Sprite.from('sliding-penguins/tree.png');
+    leftTree.anchor.set(0.5);
+
+    leftTree.x = Math.floor(Math.random() * 20);
+    leftTree.y = index * 40;
+    leftTree.scale.set(0.2);
+
+    app.stage.addChild(leftTree);
+
+    const rightTree = Sprite.from('sliding-penguins/tree.png');
+    rightTree.anchor.set(0.5);
+
+    rightTree.x = Math.floor(Math.random() * 20) + app.screen.width - 20;
+    rightTree.y = index * 40;
+    rightTree.scale.set(0.2);
+
+    app.stage.addChild(rightTree);
+
+    app.ticker.add((delta: number) => {
+      leftTree.y -= speed * delta;
+      rightTree.y -= speed * delta;
+
+      if (leftTree.getBounds().bottom < 0) {
+        leftTree.y = app.screen.height + 40;
+        rightTree.y = app.screen.height + 40;
+      }
+    });
+  }
 </script>

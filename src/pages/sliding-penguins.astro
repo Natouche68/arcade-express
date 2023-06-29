@@ -2,9 +2,11 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<div class='game'>
-  <canvas id='game-canvas'></canvas>
-</div>
+<Layout title='Sliding Penguins'>
+  <div class='game'>
+    <canvas id='game-canvas'></canvas>
+  </div>
+</Layout>
 
 <script>
   import { Application } from 'pixi.js';

@@ -25,6 +25,7 @@ import Layout from '../layouts/Layout.astro';
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
   background.y = 0;
+  background.eventMode = 'static';
 
   app.stage.addChild(background);
 
@@ -36,6 +37,12 @@ import Layout from '../layouts/Layout.astro';
   player.scale.set(0.12);
 
   app.stage.addChild(player);
+
+  background.on('pointermove', (event) => {
+    if (player.x + event.movementX > 80 && player.x + event.movementX < app.screen.width - 80) {
+      player.x += event.movementX;
+    }
+  });
 
   const treeBorder = new Container();
   treeBorder.sortableChildren = true;

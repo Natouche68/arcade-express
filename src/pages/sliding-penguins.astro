@@ -20,7 +20,7 @@ import Layout from '../layouts/Layout.astro';
     height: 640,
   });
 
-  let speed = 6;
+  let speed = 5;
 
   const treeBorder = new Container();
   treeBorder.sortableChildren = true;
@@ -48,11 +48,11 @@ import Layout from '../layouts/Layout.astro';
     }
   });
 
-  for (let index = 0; index < app.screen.height / 60 + 2; index++) {
+  for (let index = 0; index < (app.screen.height / 60) * 2; index++) {
     const leftTree = Sprite.from('sliding-penguins/tree.png');
     leftTree.anchor.set(0.5);
 
-    leftTree.x = Math.floor(Math.random() * 20);
+    leftTree.x = Math.floor(Math.random() * 30) - 10;
     leftTree.y = index * 60;
     leftTree.scale.set(0.2);
 
@@ -61,7 +61,7 @@ import Layout from '../layouts/Layout.astro';
     const rightTree = Sprite.from('sliding-penguins/tree.png');
     rightTree.anchor.set(0.5);
 
-    rightTree.x = Math.floor(Math.random() * 20) + app.screen.width - 20;
+    rightTree.x = Math.floor(Math.random() * 30) + app.screen.width - 10;
     rightTree.y = index * 60;
     rightTree.scale.set(0.2);
 

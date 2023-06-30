@@ -22,6 +22,12 @@ import Layout from '../layouts/Layout.astro';
 
   let speed = 6;
 
+  const background = Sprite.from('sliding-penguins/background.png');
+  background.x = 0;
+  background.y = 0;
+
+  app.stage.addChild(background);
+
   const player = Sprite.from('sliding-penguins/penguin.png');
   player.anchor.set(0.5);
 

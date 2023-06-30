@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { Application, Container, Sprite } from 'pixi.js';
+  import { Application, Rectangle, Sprite } from 'pixi.js';
 
   const app = new Application({
     view: document.getElementById('game-canvas') as HTMLCanvasElement,
@@ -24,6 +24,8 @@ import Layout from '../layouts/Layout.astro';
 
   let speed = 250;
   let elapsedSinceLastPlacedObstacle = 0;
+  let canPlayerMove = true;
+
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
   background.y = 0;
@@ -41,8 +43,10 @@ import Layout from '../layouts/Layout.astro';
   app.stage.addChild(player);
 
   background.on('pointermove', (event) => {
-    if (player.x + event.movementX > 80 && player.x + event.movementX < app.screen.width - 80) {
-      player.x += event.movementX;
+    if (canPlayerMove) {
+      if (player.x + event.movementX > 80 && player.x + event.movementX < app.screen.width - 80) {
+        player.x += event.movementX;
+      }
     }
   });
 
@@ -109,6 +113,11 @@ import Layout from '../layouts/Layout.astro';
         obstacle.y += speed * delta;
       }
 
+      if (!isObstacleGoingDown && isObstacleCollidingWithPlayer(obstacle)) {
+        speed = 0;
+        canPlayerMove = false;
+      }
+
       if (!isObstacleGoingDown && obstacle.getBounds().bottom < 80) {
         downGoingObstacles.push(obstacle.name);
         obstacle.zIndex = -2;
@@ -147,4 +156,15 @@ import Layout from '../layouts/Layout.astro';
 
     elapsedSinceLastPlacedObstacle += delta;
   });
+
+  function isObstacleCollidingWithPlayer(obstacle: Sprite): boolean {
+    const playerBounds = new Rectangle();
+
+    playerBounds.x = player.getBounds().x + 10;
+    playerBounds.width = player.getBounds().width - 20;
+    playerBounds.y = player.getBounds().y + 10;
+    playerBounds.height = player.getBounds().height - 20;
+
+    return obstacle.getBounds().intersects(playerBounds);
+  }
 </script>

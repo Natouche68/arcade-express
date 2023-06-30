@@ -20,18 +20,16 @@ import Layout from '../layouts/Layout.astro';
     height: 640,
   });
 
-  let speed = 5;
+  app.stage.sortableChildren = true;
 
-  const treeBorder = new Container();
-  treeBorder.sortableChildren = true;
-  app.stage.addChild(treeBorder);
-
+  let speed = 250;
+  let elapsedSinceLastPlacedObstacle = 0;
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
   background.y = 0;
   background.eventMode = 'static';
 
-  treeBorder.addChild(background);
+  app.stage.addChild(background);
 
   const player = Sprite.from('sliding-penguins/penguin.png');
   player.anchor.set(0.5);
@@ -52,24 +50,26 @@ import Layout from '../layouts/Layout.astro';
     const leftTree = Sprite.from('sliding-penguins/tree.png');
     leftTree.anchor.set(0.5);
 
-    leftTree.x = Math.floor(Math.random() * 30) - 10;
+    leftTree.x = Math.floor(Math.random() * 30) - 5;
     leftTree.y = index * 60;
     leftTree.scale.set(0.2);
 
-    treeBorder.addChild(leftTree);
+    app.stage.addChild(leftTree);
 
     const rightTree = Sprite.from('sliding-penguins/tree.png');
     rightTree.anchor.set(0.5);
 
-    rightTree.x = Math.floor(Math.random() * 30) + app.screen.width - 10;
+    rightTree.x = Math.floor(Math.random() * 30) + app.screen.width - 15;
     rightTree.y = index * 60;
     rightTree.scale.set(0.2);
 
-    treeBorder.addChild(rightTree);
+    app.stage.addChild(rightTree);
 
     let currentTreesYDirection = 1;
 
-    app.ticker.add((delta: number) => {
+    app.ticker.add(() => {
+      const delta = app.ticker.deltaMS / 1000;
+
       leftTree.y -= speed * delta * currentTreesYDirection;
       rightTree.y -= speed * delta * currentTreesYDirection;
 
@@ -82,7 +82,7 @@ import Layout from '../layouts/Layout.astro';
       if (currentTreesYDirection === -1 && leftTree.getBounds().top > 80) {
         currentTreesYDirection = 1;
 
-        const higherZIndex = treeBorder.children[treeBorder.children.length - 1].zIndex;
+        const higherZIndex = app.stage.children[app.stage.children.length - 1].zIndex;
 
         leftTree.y = app.screen.height + 20;
         leftTree.zIndex = higherZIndex + 1;
@@ -92,4 +92,59 @@ import Layout from '../layouts/Layout.astro';
       }
     });
   }
+
+  const obstacles: Sprite[] = [];
+
+  const downGoingObstacles: (string | null)[] = [];
+
+  app.ticker.add(() => {
+    const delta = app.ticker.deltaMS / 1000;
+
+    obstacles.forEach((obstacle, index) => {
+      const isObstacleGoingDown = downGoingObstacles.includes(obstacle.name);
+
+      if (!isObstacleGoingDown) {
+        obstacle.y -= speed * delta;
+      } else {
+        obstacle.y += speed * delta;
+      }
+
+      if (!isObstacleGoingDown && obstacle.getBounds().bottom < 80) {
+        downGoingObstacles.push(obstacle.name);
+        obstacle.zIndex = -2;
+      }
+
+      if (isObstacleGoingDown && obstacle.getBounds().top > 80) {
+        obstacle.destroy();
+        obstacles.splice(index, 1);
+      }
+    });
+
+    // Add a new obstacle
+    if (elapsedSinceLastPlacedObstacle > 1) {
+      elapsedSinceLastPlacedObstacle = 0;
+
+      let sprite = new Sprite();
+
+      const newObstacleType = Math.floor(Math.random() * 3);
+      if (newObstacleType === 0) {
+        sprite = Sprite.from('sliding-penguins/tree.png');
+      } else if (newObstacleType === 1) {
+        sprite = Sprite.from('sliding-penguins/rock.png');
+      } else if (newObstacleType === 2) {
+        sprite = Sprite.from('sliding-penguins/log.png');
+      }
+
+      sprite.anchor.set(0.5);
+      sprite.x = Math.floor(Math.random() * 280) + 72;
+      sprite.y = app.screen.height + 50 + Math.floor(Math.random() * 100);
+      sprite.scale.set(0.16);
+      sprite.name = 'Obstacle' + Date.now();
+
+      app.stage.addChild(sprite);
+      obstacles.push(sprite);
+    }
+
+    elapsedSinceLastPlacedObstacle += delta;
+  });
 </script>

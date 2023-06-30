@@ -15,19 +15,23 @@ import Layout from '../layouts/Layout.astro';
     view: document.getElementById('game-canvas') as HTMLCanvasElement,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true,
-    backgroundColor: '#000000',
+    backgroundColor: '#9eeeff',
     width: 420,
     height: 640,
   });
 
   let speed = 6;
 
+  const treeBorder = new Container();
+  treeBorder.sortableChildren = true;
+  app.stage.addChild(treeBorder);
+
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
   background.y = 0;
   background.eventMode = 'static';
 
-  app.stage.addChild(background);
+  treeBorder.addChild(background);
 
   const player = Sprite.from('sliding-penguins/penguin.png');
   player.anchor.set(0.5);
@@ -44,11 +48,7 @@ import Layout from '../layouts/Layout.astro';
     }
   });
 
-  const treeBorder = new Container();
-  treeBorder.sortableChildren = true;
-  treeBorder.interactiveChildren = false;
-
-  for (let index = 0; index < app.screen.height / 60 + 1; index++) {
+  for (let index = 0; index < app.screen.height / 60 + 2; index++) {
     const leftTree = Sprite.from('sliding-penguins/tree.png');
     leftTree.anchor.set(0.5);
 
@@ -67,11 +67,21 @@ import Layout from '../layouts/Layout.astro';
 
     treeBorder.addChild(rightTree);
 
-    app.ticker.add((delta: number) => {
-      leftTree.y -= speed * delta;
-      rightTree.y -= speed * delta;
+    let currentTreesYDirection = 1;
 
-      if (leftTree.getBounds().bottom < 0) {
+    app.ticker.add((delta: number) => {
+      leftTree.y -= speed * delta * currentTreesYDirection;
+      rightTree.y -= speed * delta * currentTreesYDirection;
+
+      if (currentTreesYDirection === 1 && leftTree.getBounds().bottom < 80) {
+        currentTreesYDirection = -1;
+        leftTree.zIndex = -2;
+        rightTree.zIndex = -2;
+      }
+
+      if (currentTreesYDirection === -1 && leftTree.getBounds().top > 80) {
+        currentTreesYDirection = 1;
+
         const higherZIndex = treeBorder.children[treeBorder.children.length - 1].zIndex;
 
         leftTree.y = app.screen.height + 20;
@@ -82,6 +92,4 @@ import Layout from '../layouts/Layout.astro';
       }
     });
   }
-
-  app.stage.addChild(treeBorder);
 </script>

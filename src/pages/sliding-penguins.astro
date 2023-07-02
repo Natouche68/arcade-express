@@ -25,6 +25,7 @@ import Layout from '../layouts/Layout.astro';
   let elapsedSinceLastPlacedObstacle = 0;
   let canPlayerMove = true;
   let lastXPointerPosition = -1;
+  let playerAngleFinalValue = 0;
 
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
@@ -48,10 +49,22 @@ import Layout from '../layouts/Layout.astro';
 
       if (newPlayerPosition > 80 && newPlayerPosition < app.screen.width - 80) {
         player.x = newPlayerPosition;
+
+        if (event.clientX - lastXPointerPosition > 2) {
+          playerAngleFinalValue = -30;
+        } else if (event.clientX - lastXPointerPosition < -2) {
+          playerAngleFinalValue = 30;
+        } else {
+          playerAngleFinalValue = 0;
+        }
       }
     }
 
     lastXPointerPosition = event.clientX;
+  });
+
+  app.ticker.add(() => {
+    player.angle = (player.angle + playerAngleFinalValue) / 3;
   });
 
   for (let index = 0; index < (app.screen.height / 60) * 2; index++) {

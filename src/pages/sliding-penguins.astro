@@ -4,12 +4,15 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title='Sliding Penguins'>
   <div class='game'>
+    <div id='log'></div>
     <canvas id='game-canvas'></canvas>
   </div>
 </Layout>
 
 <script>
   import { Application, Rectangle, Sprite } from 'pixi.js';
+
+  const logDiv = document.getElementById('log') as HTMLDivElement;
 
   const app = new Application({
     view: document.getElementById('game-canvas') as HTMLCanvasElement,
@@ -42,6 +45,8 @@ import Layout from '../layouts/Layout.astro';
   app.stage.addChild(player);
 
   background.on('pointermove', (event) => {
+    logDiv.innerText = `${event.movementX}, ${Math.floor(event.clientX)}`;
+
     if (canPlayerMove) {
       if (player.x + event.movementX > 80 && player.x + event.movementX < app.screen.width - 80) {
         player.x += event.movementX;

@@ -4,15 +4,12 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title='Sliding Penguins'>
   <div class='game'>
-    <div id='log'></div>
     <canvas id='game-canvas'></canvas>
   </div>
 </Layout>
 
 <script>
   import { Application, Rectangle, Sprite } from 'pixi.js';
-
-  const logDiv = document.getElementById('log') as HTMLDivElement;
 
   const app = new Application({
     view: document.getElementById('game-canvas') as HTMLCanvasElement,
@@ -27,6 +24,7 @@ import Layout from '../layouts/Layout.astro';
   let speed = 250;
   let elapsedSinceLastPlacedObstacle = 0;
   let canPlayerMove = true;
+  let lastXPointerPosition = -1;
 
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
@@ -45,13 +43,15 @@ import Layout from '../layouts/Layout.astro';
   app.stage.addChild(player);
 
   background.on('pointermove', (event) => {
-    logDiv.innerText = `${event.movementX}, ${Math.floor(event.clientX)}`;
+    if (canPlayerMove && lastXPointerPosition !== -1) {
+      const newPlayerPosition = player.x + (event.clientX - lastXPointerPosition);
 
-    if (canPlayerMove) {
-      if (player.x + event.movementX > 80 && player.x + event.movementX < app.screen.width - 80) {
-        player.x += event.movementX;
+      if (newPlayerPosition > 80 && newPlayerPosition < app.screen.width - 80) {
+        player.x = newPlayerPosition;
       }
     }
+
+    lastXPointerPosition = event.clientX;
   });
 
   for (let index = 0; index < (app.screen.height / 60) * 2; index++) {
@@ -164,8 +164,8 @@ import Layout from '../layouts/Layout.astro';
   function isObstacleCollidingWithPlayer(obstacle: Sprite): boolean {
     const playerBounds = new Rectangle();
 
-    playerBounds.x = player.getBounds().x + 10;
-    playerBounds.width = player.getBounds().width - 20;
+    playerBounds.x = player.getBounds().x + 15;
+    playerBounds.width = player.getBounds().width - 30;
     playerBounds.y = player.getBounds().y + 10;
     playerBounds.height = player.getBounds().height - 20;
 

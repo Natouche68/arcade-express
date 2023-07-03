@@ -21,53 +21,40 @@ import Layout from '../layouts/Layout.astro';
 
   app.stage.sortableChildren = true;
 
-  let speed = 250;
+  let speed = 100;
   let elapsedSinceLastPlacedObstacle = 0;
   let canPlayerMove = true;
   let lastXPointerPosition = -1;
   let playerAngleFinalValue = 0;
+  let score = 0;
+
+  const obstacles: Sprite[] = [];
 
   const background = Sprite.from('sliding-penguins/background.png');
   background.x = 0;
   background.y = 0;
   background.eventMode = 'static';
-
   app.stage.addChild(background);
 
-  const player = Sprite.from('sliding-penguins/penguin.png');
-  player.anchor.set(0.5);
+  const logo = Sprite.from('sliding-penguins/logo.png');
+  logo.name = 'Logo';
+  logo.anchor.set(0.5);
+  logo.x = app.screen.width / 2;
+  logo.y = 200;
+  logo.zIndex = 10000;
+  app.stage.addChild(logo);
 
-  player.x = app.screen.width / 2;
-  player.y = 80;
-  player.scale.set(0.12);
+  const playButton = Sprite.from('sliding-penguins/play button.png');
+  playButton.anchor.set(0.5);
+  playButton.x = app.screen.width / 2;
+  playButton.y = 400;
+  playButton.zIndex = 9999;
+  app.stage.addChild(playButton);
 
-  app.stage.addChild(player);
+  playButton.eventMode = 'static';
+  playButton.on('pointerdown', startGame);
 
-  background.on('pointermove', (event) => {
-    if (canPlayerMove && lastXPointerPosition !== -1) {
-      const newPlayerPosition = player.x + (event.clientX - lastXPointerPosition);
-
-      if (newPlayerPosition > 80 && newPlayerPosition < app.screen.width - 80) {
-        player.x = newPlayerPosition;
-
-        if (event.clientX - lastXPointerPosition > 2) {
-          playerAngleFinalValue = -30;
-        } else if (event.clientX - lastXPointerPosition < -2) {
-          playerAngleFinalValue = 30;
-        } else {
-          playerAngleFinalValue = 0;
-        }
-      }
-    }
-
-    lastXPointerPosition = event.clientX;
-  });
-
-  app.ticker.add(() => {
-    player.angle = (player.angle + playerAngleFinalValue) / 3;
-  });
-
-  for (let index = 0; index < (app.screen.height / 60) * 2; index++) {
+  for (let index = 0; index < (app.screen.height / 60) * 2 + 1; index++) {
     const leftTree = Sprite.from('sliding-penguins/tree.png');
     leftTree.anchor.set(0.5);
 
@@ -103,7 +90,12 @@ import Layout from '../layouts/Layout.astro';
       if (currentTreesYDirection === -1 && leftTree.getBounds().top > 80) {
         currentTreesYDirection = 1;
 
-        const higherZIndex = app.stage.children[app.stage.children.length - 1].zIndex;
+        let higherZIndex;
+        if (app.stage.children[app.stage.children.length - 1].name !== 'Logo') {
+          higherZIndex = app.stage.children[app.stage.children.length - 1].zIndex;
+        } else {
+          higherZIndex = app.stage.children[app.stage.children.length - 3].zIndex;
+        }
 
         leftTree.y = app.screen.height + 20;
         leftTree.zIndex = higherZIndex + 1;
@@ -114,67 +106,110 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
-  const obstacles: Sprite[] = [];
+  function startGame() {
+    speed = 250;
 
-  const downGoingObstacles: (string | null)[] = [];
+    logo.destroy();
+    playButton.destroy();
 
-  app.ticker.add(() => {
-    const delta = app.ticker.deltaMS / 1000;
+    const player = Sprite.from('sliding-penguins/penguin.png');
+    player.anchor.set(0.5);
+    player.x = app.screen.width / 2;
+    player.y = 80;
+    player.scale.set(0.12);
 
-    obstacles.forEach((obstacle, index) => {
-      const isObstacleGoingDown = downGoingObstacles.includes(obstacle.name);
+    app.stage.addChild(player);
 
-      if (!isObstacleGoingDown) {
-        obstacle.y -= speed * delta;
-      } else {
-        obstacle.y += speed * delta;
+    background.on('pointermove', (event) => {
+      if (canPlayerMove && lastXPointerPosition !== -1) {
+        const newPlayerPosition = player.x + (event.clientX - lastXPointerPosition);
+
+        if (newPlayerPosition > 80 && newPlayerPosition < app.screen.width - 80) {
+          player.x = newPlayerPosition;
+
+          if (event.clientX - lastXPointerPosition > 2) {
+            playerAngleFinalValue = -30;
+          } else if (event.clientX - lastXPointerPosition < -2) {
+            playerAngleFinalValue = 30;
+          } else {
+            playerAngleFinalValue = 0;
+          }
+        }
       }
 
-      if (!isObstacleGoingDown && isObstacleCollidingWithPlayer(obstacle)) {
-        speed = 0;
-        canPlayerMove = false;
-      }
+      lastXPointerPosition = event.clientX;
+    });
 
-      if (!isObstacleGoingDown && obstacle.getBounds().bottom < 80) {
-        downGoingObstacles.push(obstacle.name);
-        obstacle.zIndex = -2;
-      }
+    app.ticker.add(() => {
+      const delta = app.ticker.deltaMS / 1000;
 
-      if (isObstacleGoingDown && obstacle.getBounds().top > 80) {
-        obstacle.destroy();
-        obstacles.splice(index, 1);
+      if (canPlayerMove) {
+        player.angle = (player.angle + playerAngleFinalValue) / 3;
+
+        score += delta * 10;
       }
     });
 
-    // Add a new obstacle
-    if (elapsedSinceLastPlacedObstacle > 1) {
-      elapsedSinceLastPlacedObstacle = 0;
+    const downGoingObstacles: (string | null)[] = [];
 
-      let sprite = new Sprite();
+    app.ticker.add(() => {
+      const delta = app.ticker.deltaMS / 1000;
 
-      const newObstacleType = Math.floor(Math.random() * 3);
-      if (newObstacleType === 0) {
-        sprite = Sprite.from('sliding-penguins/tree.png');
-      } else if (newObstacleType === 1) {
-        sprite = Sprite.from('sliding-penguins/rock.png');
-      } else if (newObstacleType === 2) {
-        sprite = Sprite.from('sliding-penguins/log.png');
+      obstacles.forEach((obstacle, index) => {
+        const isObstacleGoingDown = downGoingObstacles.includes(obstacle.name);
+
+        if (!isObstacleGoingDown) {
+          obstacle.y -= speed * delta;
+        } else {
+          obstacle.y += speed * delta;
+        }
+
+        if (!isObstacleGoingDown && isObstacleCollidingWithPlayer(obstacle, player)) {
+          speed = 0;
+          canPlayerMove = false;
+        }
+
+        if (!isObstacleGoingDown && obstacle.getBounds().bottom < 80) {
+          downGoingObstacles.push(obstacle.name);
+          obstacle.zIndex = -2;
+        }
+
+        if (isObstacleGoingDown && obstacle.getBounds().top > 80) {
+          obstacle.destroy();
+          obstacles.splice(index, 1);
+        }
+      });
+
+      // Add a new obstacle
+      if (elapsedSinceLastPlacedObstacle > 1) {
+        elapsedSinceLastPlacedObstacle = 0;
+
+        let sprite = new Sprite();
+
+        const newObstacleType = Math.floor(Math.random() * 3);
+        if (newObstacleType === 0) {
+          sprite = Sprite.from('sliding-penguins/tree.png');
+        } else if (newObstacleType === 1) {
+          sprite = Sprite.from('sliding-penguins/rock.png');
+        } else if (newObstacleType === 2) {
+          sprite = Sprite.from('sliding-penguins/log.png');
+        }
+
+        sprite.anchor.set(0.5);
+        sprite.x = Math.floor(Math.random() * 280) + 72;
+        sprite.y = app.screen.height + 50 + Math.floor(Math.random() * 100);
+        sprite.scale.set(0.16);
+        sprite.name = 'Obstacle' + Date.now();
+
+        app.stage.addChild(sprite);
+        obstacles.push(sprite);
       }
 
-      sprite.anchor.set(0.5);
-      sprite.x = Math.floor(Math.random() * 280) + 72;
-      sprite.y = app.screen.height + 50 + Math.floor(Math.random() * 100);
-      sprite.scale.set(0.16);
-      sprite.name = 'Obstacle' + Date.now();
+      elapsedSinceLastPlacedObstacle += delta;
+    });
+  }
 
-      app.stage.addChild(sprite);
-      obstacles.push(sprite);
-    }
-
-    elapsedSinceLastPlacedObstacle += delta;
-  });
-
-  function isObstacleCollidingWithPlayer(obstacle: Sprite): boolean {
+  function isObstacleCollidingWithPlayer(obstacle: Sprite, player: Sprite): boolean {
     const playerBounds = new Rectangle();
 
     playerBounds.x = player.getBounds().x + 15;
